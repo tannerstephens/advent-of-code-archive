@@ -80,7 +80,7 @@ def main():
       return
 
     if args.create == -1:
-      args.create = max(days.keys(), key=int) + 1
+      args.create = (max(days.keys(), key=int) + 1) if len(days) else 1
 
     create_from_template(args.create)
 
@@ -91,6 +91,9 @@ def main():
     run_all_days(days)
 
   else:
+    if not days:
+      print('Day 1 has not yet been created. Run ./aoc.py -c')
+      return
     latest_day = max(days.keys(), key=int)
     run_day(days, latest_day)
 
