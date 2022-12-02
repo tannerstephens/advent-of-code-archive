@@ -2,21 +2,10 @@ from os.path import dirname, realpath
 dir_path = dirname(realpath(__file__))
 
 with open(f'{dir_path}/input') as f:
-  puzzle_input = f.read().split('\n')[:-1]
+  puzzle_input = f.read().strip()
 
 def parse_input():
-  l = []
-  out = []
-
-  for line in puzzle_input:
-    if line == '':
-      out.append(sum(l))
-      l = []
-
-    else:
-      l.append(int(line))
-
-  return out
+  return map(sum, map(lambda group: map(int, group.split('\n')), puzzle_input.split('\n\n')))
 
 def part1():
   pi = parse_input()
