@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+from math import inf
 from os.path import dirname, realpath
 from collections import deque
 dir_path = dirname(realpath(__file__))
@@ -5,76 +7,87 @@ dir_path = dirname(realpath(__file__))
 with open(f'{dir_path}/input') as f:
   puzzle_input = f.read().split('\n')[:-1]
 
-def build_filesystem(data: deque[str]) -> dict:
-  directory = data.popleft().split(' ')[-1]
-  filesystem = {directory: {}}
 
-  while len(data) > 0 and (command := data.popleft()) != '$ cd ..':
-    work = command.split(' ')
-    if work[1] == 'ls':
-      while len(data) > 0 and (ls := data.popleft())[0] != '$':
-        ls_work = ls.split(' ')
-        if ls_work[0] == 'dir':
-          filesystem[directory][ls_work[1]] = {}
-        else:
-          filesystem[directory][ls_work[1]] = int(ls_work[0])
-      if len(data):
-        data.appendleft(ls)
-    elif work[1] == 'cd':
-      data.appendleft(command)
-      filesystem[directory].update(build_filesystem(data))
+@dataclass
+class File:
+  size: int
 
-  return filesystem
+  def get_size(self):
+    return self.size
 
-def sum_filesystem(filesystem: dict):
-  s = 0
-  dumb_sum = 0
-  for value in filesystem.values():
-    if type(value) is int:
-      s += value
-    else:
-      sm, ds = sum_filesystem(value)
-      s += sm
-      dumb_sum += ds
 
-      if sm <= 100000:
-        dumb_sum += sm
+@dataclass
+class Directory(File):
+  files: list[File]
+  directories: list['Directory']
+  name: str
+  size: int
 
-  filesystem['_size'] = s
-  return s, dumb_sum
+
+  def get_size(self):
+    if not self.size:
+      self.size = sum(file.get_size() for file in self.files) + sum(directory.get_size() for directory in self.directories)
+    return self.size
+
+  @classmethod
+  def create_from_puzzle_input(cls, puzzle_input: deque[str]):
+    name = puzzle_input.popleft().split(' ')[-1]
+    files = []
+    directories = []
+
+    while len(puzzle_input) > 0 and (line := puzzle_input.popleft()) != '$ cd ..':
+      line_work = line.split(' ')
+
+      if line_work[1] == 'ls':
+        while len(puzzle_input) > 0 and (ls_line := puzzle_input.popleft())[0] != '$':
+          ls_line_work = ls_line.split(' ')
+          if ls_line_work[0] != 'dir':
+            files.append(File(int(ls_line_work[0])))
+        if len(puzzle_input):
+          puzzle_input.appendleft(ls_line)
+      else:
+        puzzle_input.appendleft(line)
+        directories.append(cls.create_from_puzzle_input(puzzle_input))
+
+    return cls(files=files, name=name, directories=directories, size=0)
+
+  def part_1(self, n):
+    s = 0
+    self.get_size()
+    if self.size <= n:
+      s += self.size
+    s += sum(d.part_1(n) for d in self.directories)
+    return s
+
+  def part_2(self, search_size: int = None):
+    if search_size is None:
+      free_space =  70000000 - self.get_size()
+      search_size = 30000000 - free_space
+
+    self.get_size()
+    m = inf
+    if self.size > search_size:
+      m = self.size
+
+      for directory in self.directories:
+        test = directory.part_2(search_size)
+        if test < m:
+          m = test
+    return m
 
 def parse_input():
   return deque(puzzle_input)
 
 def part1():
   pi = parse_input()
-
-  filesystem = build_filesystem(pi)
-
-  return sum_filesystem(filesystem)[1]
-
+  filesystem = Directory.create_from_puzzle_input(pi)
+  return filesystem.part_1(100000)
 
 def part2():
   pi = parse_input()
+  filesystem = Directory.create_from_puzzle_input(pi)
 
-  filesystem = build_filesystem(pi)
-
-  free_space =  70000000 - sum_filesystem(filesystem)[0]
-  needed_space = 30000000 - free_space
-
-  available = []
-
-  def search(d: dict, path):
-    if d['_size'] >= needed_space:
-      available.append((path, d['_size']))
-
-    for key, value in d.items():
-      if type(value) is dict:
-        search(value, key)
-
-  search(filesystem, '/')
-
-  return min(available, key=lambda l: l[1])[1]
+  return filesystem.part_2()
 
 def main():
   part1_res = part1()
