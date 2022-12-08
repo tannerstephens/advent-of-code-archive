@@ -51,12 +51,12 @@ class Directory(File):
 
     return cls(files=files, name=name, directories=directories, size=0)
 
-  def part_1(self, n):
+  def part_1(self):
     s = 0
     self.get_size()
-    if self.size <= n:
+    if self.size <= 100000:
       s += self.size
-    s += sum(d.part_1(n) for d in self.directories)
+    s += sum(d.part_1() for d in self.directories)
     return s
 
   def part_2(self, search_size: int = None):
@@ -81,7 +81,7 @@ def parse_input():
 def part1():
   pi = parse_input()
   filesystem = Directory.create_from_puzzle_input(pi)
-  return filesystem.part_1(100000)
+  return filesystem.part_1()
 
 def part2():
   pi = parse_input()
