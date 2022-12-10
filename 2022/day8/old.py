@@ -7,38 +7,35 @@ with open(f'{dir_path}/input') as f:
 def parse_input():
   return [[int(c) for c in line] for line in puzzle_input]
 
-def num_visible_from_outside(pi):
-  visible = set()
+def visible(grid, x, y):
+  search_value = grid[y][x]
 
-  y_max = [-1]*len(pi)
+  max_x = len(grid[0])
+  max_y = len(grid)
+
+  for dx, dy in [(0,1), (0,-1), (1,0), (-1,0)]:
+    sx, sy = x, y
+    f = True
+    while (0 <= sx + dx < max_x) and (0 <= sy + dy < max_y):
+      if grid[sy+dy][sx+dx] >= search_value:
+        f = False
+        break
+      sx += dx
+      sy += dy
+    if f:
+      return True
+  return False
+
+def part1():
+  pi = parse_input()
+
+  s = 0
 
   for y in range(len(pi)):
-    x_max = -1
     for x in range(len(pi[0])):
-      tree = pi[y][x]
-      if tree > x_max:
-        x_max = tree
-        visible.add((x, y))
+      s += visible(pi, x, y)
 
-      if tree > y_max[x]:
-        y_max[x] = tree
-        visible.add((x, y))
-
-  y_max = [-1]*len(pi)
-  for y in range(len(pi)-1, -1, -1):
-    x_max = -1
-    for x in range(len(pi[0])-1, -1, -1):
-      tree = pi[y][x]
-      if tree > x_max:
-        x_max = tree
-        visible.add((x, y))
-
-      if tree > y_max[x]:
-        y_max[x] = tree
-        visible.add((x, y))
-
-  return len(visible)
-
+  return s
 
 def senic_score(grid, x, y):
   search_value = grid[y][x]
@@ -60,13 +57,9 @@ def senic_score(grid, x, y):
     score *= t
   return score
 
-
-def part1():
+def part2():
   pi = parse_input()
 
-  return num_visible_from_outside(pi)
-
-def part2():
   pi = parse_input()
 
   max_score = 0
