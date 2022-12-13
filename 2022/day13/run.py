@@ -1,12 +1,13 @@
 from itertools import chain
 from os.path import dirname, realpath
+from json import loads
 dir_path = dirname(realpath(__file__))
 
 with open(f'{dir_path}/input') as f:
   puzzle_input = f.read().strip()
 
 def parse_input():
-  return [[eval(line) for line in group.split('\n')] for group in puzzle_input.split('\n\n')]
+  return [[loads(line) for line in group.split('\n')] for group in puzzle_input.split('\n\n')]
 
 def compare(l1: list, l2: list):
   i = 0
